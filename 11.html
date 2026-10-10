@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>艾莎公主的房间转盘</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;}
+body{
+  min-height:100vh;
+  background:linear-gradient(180deg,#bfe7ff 0%,#e6f6ff 50%,#d9d4ff 100%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  overflow:hidden;
+  position:relative;
+}
+
+.settings-wrap{
+  position:fixed;
+  top:18px;
+  right:18px;
+  z-index:20;
+}
+.settings-btn{
+  width:42px;
+  height:42px;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.8);
+  box-shadow:0 6px 18px rgba(60,110,180,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.settings-btn svg{width:22px;height:22px;fill:#2d6ecb;}
+.settings-panel{
+  position:absolute;
+  top:52px;
+  right:0;
+  width:250px;
+  background:rgba(255,255,255,.95);
+  border:1px solid rgba(121,165,216,.5);
+  border-radius:16px;
+  box-shadow:0 12px 30px rgba(56,95,150,.18);
+  padding:14px 14px 10px;
+  display:none;
+}
+.settings-wrap.open .settings-panel{display:block;}
+.settings-panel h3{
+  margin:0 0 10px;
+  font-size:16px;
+  color:#2f6fc0;
+  text-align:center;
+}
+.prob-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+  font-size:14px;
+  color:#2b4f82;
+}
+.prob-row input{
+  width:70px;
+  height:30px;
+  border:1px solid #cfe2ff;
+  border-radius:8px;
+  text-align:center;
+  outline:none;
+  background:#f7fbff;
+  color:#224d86;
+}
+.prob-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:8px;
+}
+.prob-actions button{
+  border:0;
+  border-radius:8px;
+  padding:7px 12px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.prob-actions .reset{background:#eaf3ff;color:#2c6fc2;}
+.prob-actions .close{background:#2c6fc2;color:#fff;}
+
+/* 飘雪 */
+.snow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.snow i{
+  position:absolute;
+  top:-30px;
+  color:#fff;
+  font-style:normal;
+  opacity:.85;
+  text-shadow:0 0 6px #9fd6ff;
+  animation:fall linear infinite;
+}
+@keyframes fall{
+  0%{transform:translate3d(0,-30px,0) rotate(0deg);}
+  100%{transform:translate3d(40px,105vh,0) rotate(360deg);}
+}
+
+.title{
+  position:relative;
+  z-index:1;
+  margin-bottom:40px;
+  font-size:28px;
+  letter-spacing:4px;
+  color:#2f6fc0;
+  text-shadow:0 2px 0 #fff,0 0 14px #9fd6ff;
+}
+.wrap{
+  position:relative;
+  z-index:1;
+  width:320px;
+  height:320px;
+}
+
+/* 转盘 */
+#wheel{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  background:conic-gradient(
+    #fff 0deg 1.5deg,
+    #5aa9f0 1.5deg 118.5deg,
+    #fff 118.5deg 121.5deg,
+    #9b86f5 121.5deg 238.5deg,
+    #fff 238.5deg 241.5deg,
+    #4fc3df 241.5deg 358.5deg,
+    #fff 358.5deg 360deg
+  );
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 0 8px rgba(255,255,255,.95),0 0 0 11px #9fd6ff,0 12px 40px rgba(80,150,230,.5);
+  transition:filter .8s, box-shadow .8s;
+}
+.wheel-text{
+  position:absolute;
+  width:100%;
+  height:100%;
+  border-radius:50%;
+}
+.wheel-text span{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:48px;
+  text-align:center;
+  font-weight:bold;
+  color:#fff;
+  font-size:22px;
+  line-height:1;
+  text-shadow:0 0 4px rgba(0,0,60,.8),0 1px 3px rgba(0,0,60,.8);
+  padding:5px 0;
+  border-radius:12px;
+  background:rgba(20,60,130,.4);
+  transform-origin:center center;
+}
+.txt1{transform:translate(-50%,-50%) rotate(60deg) translateY(-128px) rotate(-60deg);}
+.txt2{transform:translate(-50%,-50%) rotate(180deg) translateY(-128px) rotate(-180deg);}
+.txt3{transform:translate(-50%,-50%) rotate(300deg) translateY(-128px) rotate(-300deg);}
+
+/* 扇区照片背景：照片文件与 11.html 同目录，大=big.jpg，小=small.jpg；缺失时显示纯色扇区 */
+.sector{
+  position:absolute;
+  inset:0;
+  background-repeat:no-repeat;
+}
+/* 大：0°~120°，头像中心放在扇区中线（60°）距中心约90px处 */
+.sector-big{
+  clip-path:polygon(50% 50%,50% -50%,100% -36.6%,136.6% 0%,150% 50%,136.6% 100%);
+  background-color:#5aa9f0;
+  background-image:linear-gradient(rgba(60,130,220,.2),rgba(60,130,220,.2)),url("big.png");
+  background-size:100% 100%,210px auto;
+  background-position:0 0,calc(50% + 78px) calc(50% - 45px);
+}
+/* 小：120°~240°，头像中心放在扇区中线（180°）距中心约90px处 */
+.sector-small{
+  clip-path:polygon(50% 50%,136.6% 100%,100% 136.6%,50% 150%,0% 136.6%,-36.6% 100%);
+  background-color:#9b86f5;
+  background-image:linear-gradient(rgba(130,100,240,.2),rgba(130,100,240,.2)),url("small.jpg");
+  background-size:100% 100%,210px auto;
+  background-position:0 0,calc(50% + 0px) calc(50% + 90px);
+}
+/* 重：240°~360°，艾莎公主插画背景（内联SVG，无需额外文件）放在扇区中线（300°）距中心约90px处 */
+.sector-redo{
+  clip-path:polygon(50% 50%,-36.6% 100%,-50% 50%,-36.6% 0%,0% -36.6%,50% -50%);
+  background-color:#4fc3df;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><radialGradient id='g' cx='.5' cy='.4' r='.75'><stop offset='0' stop-color='%23f4fbff'/><stop offset='1' stop-color='%2385c8f5'/></radialGradient></defs><rect width='200' height='200' fill='url(%23g)'/><g stroke='white' stroke-width='2' stroke-linecap='round' opacity='.9'><path d='M26 30v14M19 37h14M21 32l10 10M31 32l-10 10'/><path d='M172 26v12M166 32h12M168 28l8 8M176 28l-8 8'/><path d='M176 112v10M171 117h10'/><path d='M22 118v10M17 123h10'/></g><path d='M50 200Q8 165 46 128L72 200Z' fill='%23bfe8ff' opacity='.75'/><path d='M150 200Q192 165 154 128L128 200Z' fill='%23bfe8ff' opacity='.75'/><path d='M52 92Q48 40 100 38Q152 40 148 92Q152 128 134 142L66 142Q48 128 52 92Z' fill='%23f3efdf'/><rect x='90' y='122' width='20' height='32' fill='%23ffe2cf'/><path d='M40 200Q44 152 100 146Q156 152 160 200Z' fill='%236ec6f2'/><path d='M68 154Q100 180 132 154' fill='none' stroke='%23e9f8ff' stroke-width='5' stroke-linecap='round'/><g fill='%23ffffff' opacity='.9'><circle cx='76' cy='176' r='2'/><circle cx='100' cy='186' r='2'/><circle cx='124' cy='176' r='2'/><circle cx='88' cy='196' r='1.6'/><circle cx='112' cy='196' r='1.6'/></g><ellipse cx='100' cy='92' rx='34' ry='40' fill='%23ffe6d6'/><g fill='%23f7f3e6' stroke='%23d9d2b8' stroke-width='1.5'><ellipse cx='138' cy='120' rx='12' ry='9'/><ellipse cx='142' cy='137' rx='11' ry='9'/><ellipse cx='144' cy='154' rx='10' ry='9'/><ellipse cx='144' cy='170' rx='9' ry='8'/></g><circle cx='144' cy='182' r='5' fill='%236ec6f2'/><path d='M64 88Q62 52 100 50Q140 52 136 88Q124 64 100 66Q78 66 64 88Z' fill='%23f7f3e6' stroke='%23d9d2b8' stroke-width='1.5'/><ellipse cx='100' cy='44' rx='22' ry='13' fill='%23f7f3e6' stroke='%23d9d2b8' stroke-width='1.5'/><path d='M82 56L90 42L100 52L110 42L118 56Z' fill='%23d9f2ff' stroke='%236ec6f2' stroke-width='1.5' stroke-linejoin='round'/><circle cx='100' cy='50' r='3' fill='%23ffffff'/><g><ellipse cx='88' cy='94' rx='5' ry='6' fill='%23ffffff'/><circle cx='88' cy='95' r='3.8' fill='%234aa8e0'/><circle cx='88' cy='95' r='1.7' fill='%23123456'/><ellipse cx='112' cy='94' rx='5' ry='6' fill='%23ffffff'/><circle cx='112' cy='95' r='3.8' fill='%234aa8e0'/><circle cx='112' cy='95' r='1.7' fill='%23123456'/></g><g fill='none' stroke='%234a3a2a' stroke-width='2' stroke-linecap='round'><path d='M80 90Q88 84 96 90'/><path d='M104 90Q112 84 120 90'/><path d='M82 82Q88 79 94 81'/><path d='M106 81Q112 79 118 82'/></g><circle cx='80' cy='106' r='5' fill='%23ffb3bf' opacity='.55'/><circle cx='120' cy='106' r='5' fill='%23ffb3bf' opacity='.55'/><path d='M100 98L98 106Q100 108 102 106Z' fill='%23f2bfa6'/><path d='M92 114Q100 121 108 114Q100 117 92 114Z' fill='%23e8607a' stroke='%23e8607a' stroke-width='1.5' stroke-linejoin='round'/></svg>");
+  background-size:210px 210px;
+  background-position:calc(50% - 78px) calc(50% - 45px);
+}
+/* 扇区分隔线 */
+.wheel-lines{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:conic-gradient(
+    #fff 0deg 1.5deg,transparent 1.5deg 118.5deg,
+    #fff 118.5deg 121.5deg,transparent 121.5deg 238.5deg,
+    #fff 238.5deg 241.5deg,transparent 241.5deg 358.5deg,
+    #fff 358.5deg 360deg
+  );
+}
+
+/* 火龙指针：0尺寸锚点位于转盘中心，旋转轴即中心；龙头默认朝上 */
+.pointer{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:0;
+  height:0;
+  transform:rotate(0deg);
+  transition:transform 4s cubic-bezier(0.17, 0.67, 0.13, 0.99);
+  z-index:2;
+  pointer-events:none;
+  --body:#ff5b45;--wing:#ff9a3d;--horn:#ffd23d;--snout:#ff8a70;--belly:#ffd08a;--line:#7a1a12;
+}
+.pointer.mood-sad{--body:#7fb0e0;--wing:#a9cdf0;--horn:#e6f6ff;--snout:#a0c8ee;--belly:#e6f3ff;--line:#2d4a78;}
+.pointer svg{
+  position:absolute;
+  left:-100px;
+  top:-190px;
+  width:200px;
+  height:200px;
+  overflow:visible;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.3));
+}
+.d-wing{fill:var(--wing);stroke:var(--line);stroke-width:2;stroke-linejoin:round;}
+.d-body{fill:var(--body);stroke:var(--line);stroke-width:2;stroke-linejoin:round;}
+.d-horn{fill:var(--horn);stroke:var(--line);stroke-width:1.5;stroke-linejoin:round;}
+.d-snout{fill:var(--snout);stroke:var(--line);stroke-width:1.5;}
+.d-belly{fill:none;stroke:var(--belly);stroke-width:3;stroke-linecap:round;}
+.d-line{fill:none;stroke:var(--line);stroke-width:2;stroke-linecap:round;}
+.d-dot{fill:var(--line);}
+.d-eye{fill:#fff;stroke:var(--line);stroke-width:1.5;}
+.d-lid{fill:var(--body);stroke:var(--line);stroke-width:1.5;}
+
+/* 表情：默认/喜悦/失落/一般 */
+.face,.flame,.ice{display:none;}
+.pointer:not(.mood-happy):not(.mood-sad):not(.mood-meh) .f-idle,
+.pointer.mood-happy .f-happy,
+.pointer.mood-sad .f-sad,
+.pointer.mood-meh .f-meh,
+.pointer.mood-happy .flame,
+.pointer.mood-sad .ice{display:inline;}
+
+/* 喷火 */
+.flame .fo,.flame .fi{
+  transform-box:fill-box;
+  transform-origin:50% 100%;
+  animation:flicker .18s ease-in-out infinite alternate;
+}
+.flame .fi{animation-duration:.13s;}
+@keyframes flicker{
+  from{transform:scale(.9,.86);}
+  to{transform:scale(1.08,1.14);}
+}
+/* 冻僵发抖 */
+.pointer.mood-sad svg{animation:shiver .12s linear infinite;}
+@keyframes shiver{
+  0%,100%{transform:translateX(-1.2px);}
+  50%{transform:translateX(1.2px);}
+}
+
+/* 冰冻覆盖层 */
+.frost{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:4;
+  opacity:0;
+  transition:opacity .9s;
+  background:
+    radial-gradient(circle,rgba(220,245,255,0) 30%,rgba(215,242,255,.6) 100%),
+    repeating-conic-gradient(from 0deg,rgba(255,255,255,.35) 0 2deg,rgba(255,255,255,0) 2deg 30deg);
+}
+.wrap.frozen .frost{opacity:1;}
+.wrap.frozen #wheel{
+  filter:saturate(.55) brightness(1.08);
+  box-shadow:0 0 0 8px rgba(255,255,255,.95),0 0 0 11px #cfeeff,0 0 50px 10px rgba(150,210,255,.9);
+}
+.wrap.happy #wheel{
+  box-shadow:0 0 0 8px rgba(255,255,255,.95),0 0 0 11px #ffd08a,0 0 50px 10px rgba(255,170,70,.65);
+}
+
+/* 中间按钮 */
+#btnSpin{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#dff3ff);
+  border:3px solid #bfe6ff;
+  color:#2f6fc0;
+  box-shadow:0 3px 12px rgba(80,150,230,.5);
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  z-index:3;
+}
+#btnSpin:active{transform:translate(-50%,-50%) scale(0.95);}
+
+.result{
+  position:relative;
+  z-index:1;
+  margin-top:40px;
+  padding:10px 26px;
+  min-height:46px;
+  border-radius:24px;
+  font-size:22px;
+  font-weight:bold;
+  color:#2f6fc0;
+  background:rgba(255,255,255,.7);
+  box-shadow:0 4px 16px rgba(80,150,230,.25);
+}
+.result:empty{visibility:hidden;}
+.result.sad{color:#4a78b8;}
+.result.happy{color:#e0531f;}
+.result.meh{color:#7a6aa8;}
+.result.show{animation:pop .5s;}
+@keyframes pop{
+  0%{transform:scale(.6);opacity:0;}
+  70%{transform:scale(1.08);}
+  100%{transform:scale(1);opacity:1;}
+}
+</style>
+</head>
+<body>
+<div class="settings-wrap" id="settingsWrap">
+  <button class="settings-btn" id="settingsBtn" aria-label="设置概率">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.18l-2.39.96a7.02 7.02 0 0 0-1.63-.94L14.66 2.5a.5.5 0 0 0-.5-.34h-3.84a.5.5 0 0 0-.5.34l-.37 2.46c-.57.24-1.11.57-1.63.94l-2.39-.96a.5.5 0 0 0-.61.18L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L2.83 14.52a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.18l2.39-.96c.52.37 1.06.7 1.63.94l.37 2.46a.5.5 0 0 0 .5.34h3.84a.5.5 0 0 0 .5-.34l.37-2.46c.57-.24 1.11-.57 1.63-.94l2.39.96a.5.5 0 0 0 .61-.18l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z"/></svg>
+  </button>
+  <div class="settings-panel" id="settingsPanel">
+    <h3>转盘概率</h3>
+    <div class="prob-row"><label>大</label><input data-sector="大" type="number" min="0" max="100" value="40"></div>
+    <div class="prob-row"><label>小</label><input data-sector="小" type="number" min="0" max="100" value="35"></div>
+    <div class="prob-row"><label>重</label><input data-sector="重" type="number" min="0" max="100" value="25"></div>
+    <div class="prob-actions">
+      <button class="reset" type="button" id="resetProb">重置</button>
+      <button class="close" type="button" id="closeProb">关闭</button>
+    </div>
+  </div>
+</div>
+<div class="snow" id="snow"></div>
+<h1 class="title">❄ 我家的房间转盘 ❄</h1>
+<div class="wrap" id="wrap">
+  <div id="wheel">
+    <div class="sector sector-big"></div>
+    <div class="sector sector-small"></div>
+    <div class="sector sector-redo"></div>
+    <div class="wheel-lines"></div>
+    <div class="wheel-text">
+      <!-- <span class="txt1">大</span>
+      <span class="txt2">小</span>
+      <span class="txt3">重</span> -->
+    </div>
+  </div>
+
+  <!-- 卡通火龙指针（中心为旋转轴，龙头朝上） -->
+  <div class="pointer" id="pointer">
+    <svg viewBox="-100 -190 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- 翅膀 -->
+      <path class="d-wing" d="M-10,-46 L-56,-74 Q-58,-52 -48,-44 Q-44,-52 -36,-40 Q-30,-48 -22,-34 Q-16,-38 -10,-32 Z"/>
+      <path class="d-wing" d="M10,-46 L56,-74 Q58,-52 48,-44 Q44,-52 36,-40 Q30,-48 22,-34 Q16,-38 10,-32 Z"/>
+      <!-- 身体 -->
+      <path class="d-body" d="M-15,0 Q-17,-62 -13,-78 L13,-78 Q17,-62 15,0 Z"/>
+      <path class="d-belly" d="M-8,-48 H8 M-8,-58 H8 M-8,-68 H8"/>
+      <!-- 头部 -->
+      <path class="d-horn" d="M-13,-106 L-22,-124 L-5,-111 Z"/>
+      <path class="d-horn" d="M13,-106 L22,-124 L5,-111 Z"/>
+      <circle class="d-body" cx="0" cy="-92" r="20"/>
+      <ellipse class="d-snout" cx="0" cy="-111" rx="12" ry="10"/>
+      <circle class="d-dot" cx="-4.5" cy="-115" r="1.6"/>
+      <circle class="d-dot" cx="4.5" cy="-115" r="1.6"/>
+      <circle cx="-14" cy="-88" r="4" fill="#ff9aa8" opacity=".6"/>
+      <circle cx="14" cy="-88" r="4" fill="#ff9aa8" opacity=".6"/>
+
+      <!-- 默认表情（转动中） -->
+      <g class="face f-idle">
+        <circle class="d-eye" cx="-8" cy="-95" r="5.5"/>
+        <circle class="d-eye" cx="8" cy="-95" r="5.5"/>
+        <circle cx="-8" cy="-96" r="2.8" fill="#222"/>
+        <circle cx="8" cy="-96" r="2.8" fill="#222"/>
+        <circle cx="-7" cy="-97.2" r="1" fill="#fff"/>
+        <circle cx="9" cy="-97.2" r="1" fill="#fff"/>
+        <path class="d-line" d="M-5,-104 Q0,-100 5,-104"/>
+      </g>
+
+      <!-- 喜悦：弯弯笑眼 + 张嘴 + 喷火 -->
+      <g class="face f-happy">
+        <path class="d-line" stroke-width="2.5" d="M-13,-94 Q-8,-102 -3,-94"/>
+        <path class="d-line" stroke-width="2.5" d="M3,-94 Q8,-102 13,-94"/>
+        <path d="M-6,-105 Q0,-95 6,-105 Z" fill="#7a1f2b" stroke="#7a1a12" stroke-width="1.5" stroke-linejoin="round"/>
+        <ellipse cx="0" cy="-100.5" rx="2.8" ry="1.6" fill="#ff7d8d"/>
+      </g>
+
+      <!-- 失落：下垂眼 + 皱眉 + 眼泪 -->
+      <g class="face f-sad">
+        <circle class="d-eye" cx="-8" cy="-94" r="5.5"/>
+        <circle class="d-eye" cx="8" cy="-94" r="5.5"/>
+        <circle cx="-8" cy="-92.5" r="2.8" fill="#222"/>
+        <circle cx="8" cy="-92.5" r="2.8" fill="#222"/>
+        <path class="d-line" d="M-14,-99 L-3,-104"/>
+        <path class="d-line" d="M14,-99 L3,-104"/>
+        <path class="d-line" d="M-5,-102 Q0,-106 5,-102"/>
+        <path d="M-12,-89 Q-15,-84 -12,-82 Q-9,-84 -12,-89 Z" fill="#8fd3ff" stroke="#4a9fe0" stroke-width="1"/>
+        <path d="M12,-89 Q15,-84 12,-82 Q9,-84 12,-89 Z" fill="#8fd3ff" stroke="#4a9fe0" stroke-width="1"/>
+      </g>
+
+      <!-- 一般：半睁眼 + 平嘴 -->
+      <g class="face f-meh">
+        <circle class="d-eye" cx="-8" cy="-95" r="5.5"/>
+        <circle class="d-eye" cx="8" cy="-95" r="5.5"/>
+        <circle cx="-8" cy="-93.5" r="2.6" fill="#222"/>
+        <circle cx="8" cy="-93.5" r="2.6" fill="#222"/>
+        <path class="d-lid" d="M-13.5,-95 A5.5,5.5 0 0 1 -2.5,-95 Z"/>
+        <path class="d-lid" d="M2.5,-95 A5.5,5.5 0 0 1 13.5,-95 Z"/>
+        <path class="d-line" d="M-4,-103 H4"/>
+      </g>
+
+      <!-- 喷火 -->
+      <g class="flame">
+        <path class="fo" fill="#ff9a1f" stroke="#ff5a1f" stroke-width="1.5" stroke-linejoin="round" d="M-11,-120 Q-20,-140 -8,-152 Q-8,-146 -3,-146 Q-6,-166 4,-178 Q4,-164 10,-158 Q8,-152 12,-148 Q22,-136 11,-120 Q0,-114 -11,-120 Z"/>
+        <path class="fi" fill="#ffe066" d="M-5,-120 Q-10,-134 -2,-144 Q-1,-136 4,-138 Q8,-130 5,-120 Q0,-116 -5,-120 Z"/>
+      </g>
+
+      <!-- 冰冻 -->
+      <g class="ice">
+        <path d="M-62,-62 L-38,-28 L38,-28 L62,-62 L36,-120 L0,-136 L-36,-120 Z" fill="rgba(190,235,255,.55)" stroke="#e8f8ff" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M-36,-120 L-14,-90 L-38,-28 M36,-120 L14,-90 L38,-28 M-14,-90 L0,-136 M14,-90 L0,-136 M-14,-90 L14,-90" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1.5"/>
+        <path d="M-30,-104 L-20,-118" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+        <path d="M52,-100 v10 M47,-95 h10" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+
+  <button id="btnSpin">点击转动</button>
+  <div class="frost"></div>
+</div>
+<div class="result" id="result"></div>
+
+<script>
+const wrap = document.getElementById('wrap');
+const pointer = document.getElementById('pointer');
+const btnSpin = document.getElementById('btnSpin');
+const resultDom = document.getElementById('result');
+const settingsWrap = document.getElementById('settingsWrap');
+const settingsBtn = document.getElementById('settingsBtn');
+const closeProb = document.getElementById('closeProb');
+const resetProb = document.getElementById('resetProb');
+const defaultWeights = { 大: 40, 小: 35, 重: 25 };
+
+settingsBtn.addEventListener('click', () => {
+  settingsWrap.classList.toggle('open');
+});
+closeProb.addEventListener('click', () => settingsWrap.classList.remove('open'));
+resetProb.addEventListener('click', () => {
+  document.querySelectorAll('[data-sector]').forEach(input => {
+    const key = input.dataset.sector;
+    input.value = defaultWeights[key] || 0;
+  });
+});
+
+const probabilityInputs = [...document.querySelectorAll('[data-sector]')];
+
+probabilityInputs.forEach(input => {
+  input.addEventListener('input', () => {
+    const v = Number(input.value);
+    if (Number.isNaN(v)) return;
+    input.value = Math.max(0, Math.min(100, v));
+  });
+});
+
+// 飘雪
+const snow = document.getElementById('snow');
+for(let i=0;i<36;i++){
+  const f = document.createElement('i');
+  f.textContent = '❄';
+  f.style.left = Math.random()*100 + 'vw';
+  f.style.fontSize = (10 + Math.random()*16) + 'px';
+  f.style.animationDuration = (6 + Math.random()*8) + 's';
+  f.style.animationDelay = (-Math.random()*12) + 's';
+  snow.appendChild(f);
+}
+
+// 3个区块：大=冰冻失落，小=喜悦喷火，重=一般
+const sectors = [
+  { name:"大", title:"🥶 恭喜爸爸大房间", mood:"sad", start:0, end:120 },
+  { name:"小", title:"🔥 恭喜悦悦小房间", mood:"happy", start:120, end:240 },
+  { name:"重", title:"😐 重新来一次", mood:"meh", start:240, end:360 }
+];
+let isSpinning = false;
+let currentDeg = 0;
+
+function getWeights() {
+  return sectors.reduce((acc, s) => {
+    const input = document.querySelector(`[data-sector="${s.name}"]`);
+    acc[s.name] = Number(input && input.value) || 0;
+    return acc;
+  }, {});
+}
+
+function pickWeightedSector() {
+  const weights = getWeights();
+  const total = Object.values(weights).reduce((sum, v) => sum + Math.max(0, v), 0);
+  if (!total) {
+    return sectors[0];
+  }
+  let r = Math.random() * total;
+  for (const s of sectors) {
+    const w = Math.max(0, weights[s.name] || 0);
+    if (r < w) return s;
+    r -= w;
+  }
+  return sectors[sectors.length - 1];
+}
+
+btnSpin.onclick = function(){
+  if(isSpinning) return;
+  isSpinning = true;
+  // 清除上一次的表情与特效
+  pointer.classList.remove('mood-sad','mood-happy','mood-meh');
+  wrap.classList.remove('frozen','happy');
+  resultDom.className = 'result';
+  resultDom.innerText = "";
+
+  const picked = pickWeightedSector();
+  // 指针与扇区都是自顶部顺时针计角，指针最终角度必须落在命中扇区内（避开分隔线，留10°边距）
+  const targetAngle = picked.start + 10 + Math.random() * (picked.end - picked.start - 20);
+
+  // 随机多圈 + 落点：实际命中区间由已配置概率决定
+  // 先把当前累计角度对齐到整圈，保证最终角度模360 == targetAngle
+  const randomTurn = Math.floor(Math.random()*5)+4; // 4~8圈
+  const baseDeg = currentDeg - (currentDeg % 360);
+  const targetDeg = baseDeg + randomTurn*360 + targetAngle;
+
+  // 盘子保持不转，只有箭头转动
+  pointer.style.transform = `rotate(${targetDeg}deg)`;
+
+  setTimeout(()=>{
+    const pick = picked;
+    pointer.classList.add('mood-' + pick.mood);
+    if(pick.mood === 'sad') wrap.classList.add('frozen');
+    if(pick.mood === 'happy') wrap.classList.add('happy');
+    resultDom.innerText = pick.title;
+    resultDom.className = 'result show ' + pick.mood;
+    currentDeg = targetDeg;
+    isSpinning = false;
+  },4000);
+}
+</script>
+</body>
+</html>
